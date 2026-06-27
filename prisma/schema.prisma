@@ -1,0 +1,110 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      String   @default("STAFF") // ADMIN, MANAGER, STAFF
+  phone     String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders Order[]
+}
+
+model Category {
+  id        String     @id @default(cuid())
+  name      String     @unique
+  color     String     @default("#6B7280")
+  createdAt DateTime   @default(now())
+  menuItems MenuItem[]
+}
+
+model MenuItem {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  price       Float
+  image       String?
+  isAvailable Boolean  @default(true)
+  categoryId  String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  category   Category    @relation(fields: [categoryId], references: [id])
+  orderItems OrderItem[]
+  recipes    Recipe[]
+}
+
+model Ingredient {
+  id           String   @id @default(cuid())
+  name         String   @unique
+  unit         String   // "g", "ml", "pcs", "kg", "L"
+  quantity     Float    @default(0)
+  minQuantity  Float    @default(10) // alert when below this
+  costPerUnit  Float    @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  recipes        Recipe[]
+  stockMovements StockMovement[]
+}
+
+model Recipe {
+  id           String  @id @default(cuid())
+  menuItemId   String
+  ingredientId String
+  quantity     Float   // amount of ingredient needed per 1 menu item
+
+  menuItem   MenuItem   @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  ingredient Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+
+  @@unique([menuItemId, ingredientId])
+}
+
+model Order {
+  id          String   @id @default(cuid())
+  orderNumber Int      @default(autoincrement())
+  tableNumber String?
+  status      String   @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, CANCELLED
+  totalAmount Float
+  notes       String?
+  staffId     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  staff      User        @relation(fields: [staffId], references: [id])
+  orderItems OrderItem[]
+}
+
+model OrderItem {
+  id         String @id @default(cuid())
+  orderId    String
+  menuItemId String
+  quantity   Int
+  price      Float  // price at time of order
+  notes      String?
+
+  order    Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id])
+}
+
+model StockMovement {
+  id           String   @id @default(cuid())
+  ingredientId String
+  type         String   // IN (restock), OUT (usage), ADJUST (manual adjustment)
+  quantity     Float
+  note         String?
+  createdAt    DateTime @default(now())
+
+  ingredient Ingredient @relation(fields: [ingredientId], references: [id])
+}

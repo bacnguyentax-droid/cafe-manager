@@ -54,24 +54,26 @@ async function main() {
     create: { name: "Đồ ăn", color: "#DC2626" },
   });
 
-  // Seed menu items
-  await prisma.menuItem.createMany({
-    skipDuplicates: true,
-    data: [
-      { name: "Cà phê đen", price: 25000, categoryId: coffeeCategory.id, description: "Cà phê đen truyền thống" },
-      { name: "Cà phê sữa", price: 30000, categoryId: coffeeCategory.id, description: "Cà phê sữa đặc" },
-      { name: "Cà phê đá", price: 28000, categoryId: coffeeCategory.id, description: "Cà phê đá mát lạnh" },
-      { name: "Cappuccino", price: 55000, categoryId: coffeeCategory.id, description: "Cappuccino kem mịn" },
-      { name: "Latte", price: 55000, categoryId: coffeeCategory.id, description: "Cà phê sữa Latte" },
-      { name: "Americano", price: 45000, categoryId: coffeeCategory.id, description: "Espresso pha loãng" },
-      { name: "Trà đào", price: 35000, categoryId: teaCategory.id, description: "Trà đào thơm ngon" },
-      { name: "Trà sữa trân châu", price: 40000, categoryId: teaCategory.id, description: "Trà sữa với trân châu" },
-      { name: "Sinh tố bơ", price: 45000, categoryId: smoothieCategory.id, description: "Sinh tố bơ béo ngậy" },
-      { name: "Sinh tố dâu", price: 40000, categoryId: smoothieCategory.id, description: "Sinh tố dâu tươi" },
-      { name: "Bánh croissant", price: 35000, categoryId: foodCategory.id, description: "Bánh croissant bơ" },
-      { name: "Bánh mì nướng", price: 25000, categoryId: foodCategory.id, description: "Bánh mì nướng bơ tỏi" },
-    ],
-  });
+  // Seed menu items (dùng upsert vì SQLite không hỗ trợ skipDuplicates)
+  const menuItemsData = [
+    { name: "Cà phê đen", price: 25000, categoryId: coffeeCategory.id, description: "Cà phê đen truyền thống" },
+    { name: "Cà phê sữa", price: 30000, categoryId: coffeeCategory.id, description: "Cà phê sữa đặc" },
+    { name: "Cà phê đá", price: 28000, categoryId: coffeeCategory.id, description: "Cà phê đá mát lạnh" },
+    { name: "Cappuccino", price: 55000, categoryId: coffeeCategory.id, description: "Cappuccino kem mịn" },
+    { name: "Latte", price: 55000, categoryId: coffeeCategory.id, description: "Cà phê sữa Latte" },
+    { name: "Americano", price: 45000, categoryId: coffeeCategory.id, description: "Espresso pha loãng" },
+    { name: "Trà đào", price: 35000, categoryId: teaCategory.id, description: "Trà đào thơm ngon" },
+    { name: "Trà sữa trân châu", price: 40000, categoryId: teaCategory.id, description: "Trà sữa với trân châu" },
+    { name: "Sinh tố bơ", price: 45000, categoryId: smoothieCategory.id, description: "Sinh tố bơ béo ngậy" },
+    { name: "Sinh tố dâu", price: 40000, categoryId: smoothieCategory.id, description: "Sinh tố dâu tươi" },
+    { name: "Bánh croissant", price: 35000, categoryId: foodCategory.id, description: "Bánh croissant bơ" },
+    { name: "Bánh mì nướng", price: 25000, categoryId: foodCategory.id, description: "Bánh mì nướng bơ tỏi" },
+  ];
+
+  for (const item of menuItemsData) {
+    const existing = await prisma.menuItem.findFirst({ where: { name: item.name } });
+    if (!existing) await prisma.menuItem.create({ data: item });
+  }
 
   // Seed ingredients
   const espresso = await prisma.ingredient.upsert({

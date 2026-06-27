@@ -73,7 +73,7 @@ model Recipe {
 
 model Order {
   id          String   @id @default(cuid())
-  orderNumber Int      @default(autoincrement())
+  orderNumber Int      @default(0) //tự tăng trong code
   tableNumber String?
   status      String   @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, CANCELLED
   totalAmount Float
